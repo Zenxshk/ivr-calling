@@ -19,7 +19,7 @@ def handle_call():
         user_input = data.get('dtmf', '')
         
         # Your Render app URL - UPDATE THIS
-        BASE_URL = "https://your-app-name.onrender.com"
+        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
         
         if user_input == '':
             # First interaction - play welcome.mp3 and ask for input
@@ -52,7 +52,7 @@ def handle_call():
     except Exception as e:
         print(f"Error: {e}")
         # Fallback response
-        BASE_URL = "https://your-app-name.onrender.com"
+        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
         error_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Play>{BASE_URL}/static/welcome.mp3</Play>
