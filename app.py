@@ -25,8 +25,8 @@ APP_SECRET = os.getenv("APP_SECRET", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
 PROVIDER_API = os.getenv("PROVIDER_API", "https://testing.com/v1/call")
 
 # Numbers (E.164 format strongly recommended)
-FROM_NUMBER = os.getenv("FROM_NUMBER", "917943446575")   # virtual / caller number
-TO_NUMBER = os.getenv("TO_NUMBER", "917775980069")       # destination/customer number
+FROM_NUMBER = os.getenv("FROM_NUMBER", "+917943446575")   # virtual / caller number
+TO_NUMBER = os.getenv("TO_NUMBER", "+917775980069")       # destination/customer number
 
 DEFAULT_AUDIO = os.getenv("DEFAULT_AUDIO", "welcome.mp3")
 SECOND_AUDIO = os.getenv("SECOND_AUDIO", "second.mp3")
