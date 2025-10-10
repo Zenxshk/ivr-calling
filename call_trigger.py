@@ -3,7 +3,7 @@ import requests
 
 def make_call():
     # Your Render app URL - UPDATE THIS AFTER DEPLOYMENT
-    ANSWER_URL = "https://your-app-name.onrender.com/call"
+    ANSWER_URL = "https://call-ivr.onrender.com/call"
     
     payload = {
         "appid": "4222424",  # String for v1 API

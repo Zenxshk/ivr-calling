@@ -43,7 +43,7 @@ def handle_call():
         print(f"📞 Call received - User pressed: {user_input}")
         
         # Your Render app URL
-        BASE_URL = "https://your-app-name.onrender.com"
+        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
         
         if user_input == '':
             # Welcome message
