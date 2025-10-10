@@ -1,72 +1,42 @@
-# app.py
-from flask import Flask, request
-import os
+# call_trigger.py - KEEP THIS AS IS
+import requests
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "IVR System Running"
-
-@app.route('/call', methods=['POST'])
-def handle_call():
-    """Piopiy Answer URL - Called when call is answered"""
-    try:
-        data = request.json or {}
-        print("📞 Call received")
-        
-        # Get user input if any
-        user_input = data.get('dtmf', '')
-        
-        # Your Render app URL - UPDATE THIS
-        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
-        
-        if user_input == '':
-            # First interaction - play welcome.mp3 and ask for input
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
-    <GetInput maxDigits="1" timeout="10">
-        <Speak>Press 1 or 2 to continue</Speak>
-    </GetInput>
-</Response>"""
-        
-        elif user_input in ['1', '2']:
-            # User pressed 1 or 2 - play second.mp3 and hangup
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Play>{BASE_URL}/static/second.mp3</Play>
-    <Hangup/>
-</Response>"""
-        
-        else:
-            # Invalid input - play welcome.mp3 again
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
-    <Hangup/>
-</Response>"""
-        
-        return response_xml, 200, {'Content-Type': 'application/xml'}
+def make_call():
+    payload = {
+        "appid": 4222424,
+        "secret": "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780",
+        "from": 917943446575,
+        "to": 917775980069,
+        "pcmo": [
+            {
+                "action": "bridge",
+                "duration": 120,
+                "timeout": 30,
+                "from": 917943446575,
+                "connect": [{"type": "pstn", "number": 917775980069}]
+            }
+        ]
+    }
     
+    try:
+        print("🚀 Triggering call...")
+        response = requests.post(
+            "https://rest.telecmi.com/v2/ind_pcmo_make_call",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        print(f"Status: {response.status_code}")
+        print(f"Response: {response.text}")
+        
+        if response.status_code == 200:
+            print("✅ Call initiated!")
+        else:
+            print("❌ Call failed")
+            
     except Exception as e:
-        print(f"Error: {e}")
-        # Fallback response
-        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
-        error_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
-    <Hangup/>
-</Response>"""
-        return error_xml, 200, {'Content-Type': 'application/xml'}
+        print(f"💥 Error: {e}")
 
-@app.route('/event', methods=['POST'])
-def handle_event():
-    """Piopiy Event URL"""
-    data = request.json or {}
-    print("📊 Event:", data)
-    return {"status": "success"}
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+if __name__ == "__main__":
+    make_call()

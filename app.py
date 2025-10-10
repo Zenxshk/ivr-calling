@@ -1,50 +1,50 @@
-# app.py
+# app.py - NEW FILE for IVR logic
 from flask import Flask, request
 import os
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return "IVR System Running"
-
 @app.route('/call', methods=['POST'])
 def handle_call():
-    """Piopiy Answer URL - Called when call is answered"""
+    """This handles the call when answered"""
     try:
         data = request.json or {}
-        print("📞 Call received")
-        
-        # Get user input if any
         user_input = data.get('dtmf', '')
         
-        # Your Render app URL - UPDATE THIS
-        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
+        print(f"📞 Call received - User pressed: {user_input}")
         
         if user_input == '':
-            # First interaction - play welcome.mp3 and ask for input
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+            # First interaction - welcome message
+            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
+    <Speak>Welcome to our service! Thank you for calling.</Speak>
     <GetInput maxDigits="1" timeout="10">
-        <Speak>Press 1 or 2 to continue</Speak>
+        <Speak>Press 1 for customer service. Press 2 for technical support.</Speak>
     </GetInput>
 </Response>"""
         
-        elif user_input in ['1', '2']:
-            # User pressed 1 or 2 - play second.mp3 and hangup
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+        elif user_input == '1':
+            # User pressed 1
+            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Play>{BASE_URL}/static/second.mp3</Play>
+    <Speak>You selected customer service. Our team will assist you shortly.</Speak>
+    <Hangup/>
+</Response>"""
+        
+        elif user_input == '2':
+            # User pressed 2
+            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Speak>You selected technical support. Please hold while we connect you.</Speak>
     <Hangup/>
 </Response>"""
         
         else:
-            # Invalid input - play welcome.mp3 again
-            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+            # Invalid input
+            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
-    <Hangup/>
+    <Speak>Invalid option. Please try again.</Speak>
+    <Redirect>https://your-app.onrender.com/call</Redirect>
 </Response>"""
         
         return response_xml, 200, {'Content-Type': 'application/xml'}
@@ -52,19 +52,18 @@ def handle_call():
     except Exception as e:
         print(f"Error: {e}")
         # Fallback response
-        BASE_URL = "https://ivr-calling-1nyf.onrender.com"
-        error_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+        error_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Play>{BASE_URL}/static/welcome.mp3</Play>
+    <Speak>Welcome to our service. Thank you for calling.</Speak>
     <Hangup/>
 </Response>"""
         return error_xml, 200, {'Content-Type': 'application/xml'}
 
 @app.route('/event', methods=['POST'])
 def handle_event():
-    """Piopiy Event URL"""
+    """Handle call events"""
     data = request.json or {}
-    print("📊 Event:", data)
+    print("📊 Call event:", data)
     return {"status": "success"}
 
 if __name__ == '__main__':
