@@ -1,57 +1,98 @@
-# app.py - NEW FILE for IVR logic
-from flask import Flask, request
+# app.py
+from flask import Flask, request, Response
+import pyttsx3
 import os
+import threading
+import tempfile
 
 app = Flask(__name__)
 
+def text_to_speech(text, filename):
+    """Convert text to speech and save as MP3"""
+    try:
+        engine = pyttsx3.init()
+        
+        # Set voice properties
+        engine.setProperty('rate', 150)    # Speed
+        engine.setProperty('volume', 0.9)  # Volume
+        
+        # Get available voices
+        voices = engine.getProperty('voices')
+        if voices:
+            engine.setProperty('voice', voices[0].id)  # Use first voice
+        
+        # Save to file
+        engine.save_to_file(text, filename)
+        engine.runAndWait()
+        return True
+    except Exception as e:
+        print(f"TTS Error: {e}")
+        return False
+
+@app.route('/')
+def home():
+    return "IVR System Running"
+
 @app.route('/call', methods=['POST'])
 def handle_call():
-    """This handles the call when answered"""
+    """Piopiy Answer URL - Voice enabled"""
     try:
         data = request.json or {}
         user_input = data.get('dtmf', '')
         
         print(f"📞 Call received - User pressed: {user_input}")
         
+        # Your Render app URL
+        BASE_URL = "https://your-app-name.onrender.com"
+        
         if user_input == '':
-            # First interaction - welcome message
-            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
+            # Welcome message
+            welcome_text = "Welcome to our IVR system. Press 1 for services. Press 2 for support."
+            
+            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Speak>Welcome to our service! Thank you for calling.</Speak>
+    <Speak>{welcome_text}</Speak>
     <GetInput maxDigits="1" timeout="10">
-        <Speak>Press 1 for customer service. Press 2 for technical support.</Speak>
+        <Speak>Please press 1 or 2</Speak>
     </GetInput>
 </Response>"""
         
         elif user_input == '1':
-            # User pressed 1
-            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
+            # Option 1 selected
+            option1_text = "You selected services. Thank you for calling. Goodbye."
+            
+            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Speak>You selected customer service. Our team will assist you shortly.</Speak>
+    <Speak>{option1_text}</Speak>
     <Hangup/>
 </Response>"""
         
         elif user_input == '2':
-            # User pressed 2
-            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
+            # Option 2 selected
+            option2_text = "You selected support. Our team will contact you soon. Goodbye."
+            
+            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Speak>You selected technical support. Please hold while we connect you.</Speak>
+    <Speak>{option2_text}</Speak>
     <Hangup/>
 </Response>"""
         
         else:
             # Invalid input
-            response_xml = """<?xml version="1.0" encoding="UTF-8"?>
+            invalid_text = "Invalid option. Please try again."
+            
+            response_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Speak>Invalid option. Please try again.</Speak>
-    <Redirect>https://your-app.onrender.com/call</Redirect>
+    <Speak>{invalid_text}</Speak>
+    <Redirect>{BASE_URL}/call</Redirect>
 </Response>"""
         
+        print("✅ Sending VoiceXML response")
         return response_xml, 200, {'Content-Type': 'application/xml'}
     
     except Exception as e:
         print(f"Error: {e}")
-        # Fallback response
+        # Fallback with simple text
         error_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Speak>Welcome to our service. Thank you for calling.</Speak>
@@ -65,6 +106,19 @@ def handle_event():
     data = request.json or {}
     print("📊 Call event:", data)
     return {"status": "success"}
+
+# Text-to-speech endpoint (optional)
+@app.route('/tts/<text>')
+def generate_tts(text):
+    """Generate TTS audio for text"""
+    try:
+        filename = f"static/tts_{hash(text)}.mp3"
+        if text_to_speech(text, filename):
+            return {"status": "success", "file": filename}
+        else:
+            return {"status": "error"}, 500
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
