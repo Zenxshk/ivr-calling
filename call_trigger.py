@@ -3,7 +3,7 @@ import requests
 
 def make_call():
     # Use the EXACT URL from your Piopiy dashboard
-    ANSWER_URL = "https://call-ivr.onrender.com/call"
+    ANSWER_URL = "https://ivr-calling-1nyf.onrender.com/call"
     
     payload = {
         "appid": "4222424",
