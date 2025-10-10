@@ -5,21 +5,44 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Config - Using correct Piopiy API endpoint
+# Config - Using TeleCMI v2 API with your Answer URL
 APP_ID = os.getenv("APP_ID", "4222424")
 APP_SECRET = os.getenv("APP_SECRET", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
-PIOPIY_API_URL = "https://piopiy.telecmi.com/v1/call/make"  # Correct endpoint
-FROM_NUMBER = os.getenv("FROM_NUMBER", "+917943446575")
-TO_NUMBER = os.getenv("TO_NUMBER", "+917775980069")
-ANSWER_URL = os.getenv("ANSWER_URL", "https://example.com/call")  # Use your actual answer URL
+FROM_NUMBER = os.getenv("FROM_NUMBER", "919443446575")  # Your number without +
+TO_NUMBER = os.getenv("TO_NUMBER", "917775980069")      # Destination without +
+
+# Use the Answer URL from your Piopiy dashboard
+ANSWER_URL = "https://example.com/call"  # From your dashboard
+
+# Correct TeleCMI v2 API endpoint
+TELEcMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 
 def make_call():
+    # Payload structure with your Answer URL
     payload = {
-        "appid": APP_ID,
+        "appid": int(APP_ID),
         "secret": APP_SECRET,
         "from": FROM_NUMBER,
         "to": TO_NUMBER,
-        "answer_url": ANSWER_URL
+        "answer_url": ANSWER_URL,  # Your configured Answer URL
+        "extra_params": {
+            "test_id": "IVR_TEST_001"
+        },
+        "pcmo": [
+            {
+                "action": "bridge",
+                "duration": 180,
+                "timeout": 30,
+                "from": FROM_NUMBER,
+                "loop": 2,
+                "connect": [
+                    {
+                        "type": "pstn",
+                        "number": TO_NUMBER
+                    }
+                ]
+            }
+        ]
     }
     
     headers = {
@@ -27,26 +50,32 @@ def make_call():
     }
     
     try:
-        print(f"Making call from {FROM_NUMBER} to {TO_NUMBER}")
-        print(f"Using API: {PIOPIY_API_URL}")
+        print("📞 Making call with configuration:")
+        print(f"From: {FROM_NUMBER}")
+        print(f"To: {TO_NUMBER}")
+        print(f"Answer URL: {ANSWER_URL}")
+        print(f"API URL: {TELEcMI_API_URL}")
         
-        res = requests.post(PIOPIY_API_URL, json=payload, headers=headers, timeout=15)
+        res = requests.post(TELEcMI_API_URL, json=payload, headers=headers, timeout=15)
         
-        print(f"Response Status: {res.status_code}")
-        print(f"Response Text: {res.text}")
+        print(f"📊 Status Code: {res.status_code}")
+        print(f"📄 Response: {res.text}")
         
         res.raise_for_status()
         
         try:
             data = res.json()
-            print("Call triggered successfully:", data)
+            print("✅ Call triggered successfully!")
+            print("Response data:", data)
             return data
         except ValueError:
             print("Response (text):", res.text)
             return {"text_response": res.text}
             
     except requests.exceptions.RequestException as e:
-        print("Error triggering call:", e)
+        print("❌ Error triggering call:", e)
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Error response: {e.response.text}")
         return None
 
 if __name__ == "__main__":
