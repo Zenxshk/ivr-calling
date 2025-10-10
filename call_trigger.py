@@ -1,28 +1,29 @@
 # call_trigger.py
 import os
 import requests
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Config - Using TeleCMI v2 API
-APP_ID = os.getenv("APP_ID", "4222424")
-APP_SECRET = os.getenv("APP_SECRET", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
-FROM_NUMBER = os.getenv("FROM_NUMBER", "917943446575")  # Your number without +
-TO_NUMBER = os.getenv("TO_NUMBER", "917775980069")      # Destination without +
+# Your exact credentials from Piopiy dashboard
+APP_ID = 4222424  # Must be integer
+APP_SECRET = "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780"
+FROM_NUMBER = 917943446575  # Must be integer (no quotes)
+TO_NUMBER = 917775980069    # Must be integer (no quotes)
 
-# Correct TeleCMI v2 API endpoint
-TELEcMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
+# Correct API endpoint from documentation
+API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 
 def make_call():
-    # Payload structure WITHOUT answer_url
+    # Exact payload structure as per TeleCMI documentation
     payload = {
-        "appid": int(APP_ID),
+        "appid": APP_ID,
         "secret": APP_SECRET,
         "from": FROM_NUMBER,
         "to": TO_NUMBER,
         "extra_params": {
-            "test_id": "IVR_TEST_001"
+            "order_id": "TEST123"
         },
         "pcmo": [
             {
@@ -46,35 +47,36 @@ def make_call():
     }
     
     try:
-        print("📞 Making call with configuration:")
+        print("🚀 Making call with TeleCMI v2 API...")
         print(f"From: {FROM_NUMBER}")
         print(f"To: {TO_NUMBER}")
-        print(f"API URL: {TELEcMI_API_URL}")
+        print(f"API: {API_URL}")
         
-        res = requests.post(TELEcMI_API_URL, json=payload, headers=headers, timeout=15)
+        response = requests.post(API_URL, json=payload, headers=headers, timeout=30)
         
-        print(f"📊 Status Code: {res.status_code}")
-        print(f"📄 Response: {res.text}")
+        print(f"📊 Status Code: {response.status_code}")
+        print(f"📄 Response: {response.text}")
         
-        res.raise_for_status()
-        
-        try:
-            data = res.json()
-            if data.get('status') == 'error':
-                print("❌ Call failed with error!")
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'progress':
+                print("✅ SUCCESS! Call is ringing!")
+                print(f"Request ID: {data.get('request_id')}")
+                return data
             else:
-                print("✅ Call triggered successfully!")
-            print("Response data:", data)
-            return data
-        except ValueError:
-            print("Response (text):", res.text)
-            return {"text_response": res.text}
+                print("❌ API returned error status")
+                return data
+        else:
+            print(f"❌ HTTP Error: {response.status_code}")
+            return None
             
-    except requests.exceptions.RequestException as e:
-        print("❌ Error triggering call:", e)
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Error response: {e.response.text}")
+    except Exception as e:
+        print(f"💥 Request failed: {e}")
         return None
 
 if __name__ == "__main__":
-    make_call()
+    result = make_call()
+    if result and result.get('status') == 'progress':
+        print("🎉 Call initiated successfully! Phone should ring soon.")
+    else:
+        print("😞 Call failed. Check the error above.")
