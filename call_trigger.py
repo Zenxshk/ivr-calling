@@ -2,15 +2,15 @@
 import requests
 
 def make_call():
-    # Your Render app URL - UPDATE THIS AFTER DEPLOYMENT
-    ANSWER_URL = "https://call-ivr.onrender.com/call"
+    # Use the EXACT URL from your Piopiy dashboard
+    ANSWER_URL = "https://call-lvr.onrender.com/call"
     
     payload = {
-        "appid": "4222424",  # String for v1 API
+        "appid": "4222424",
         "secret": "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780",
-        "from": "917943446575",  # String for v1 API
-        "to": "917775980069",    # String for v1 API
-        "answer_url": ANSWER_URL  # This is REQUIRED for voice
+        "from": "917943446575",
+        "to": "917775980069", 
+        "answer_url": ANSWER_URL
     }
     
     headers = {
@@ -23,7 +23,6 @@ def make_call():
         print(f"To: 917775980069")
         print(f"Answer URL: {ANSWER_URL}")
         
-        # Use Piopiy v1 API for voice support
         response = requests.post(
             "https://piopiy.telecmi.com/v1/call/make",
             json=payload,
@@ -35,7 +34,7 @@ def make_call():
         print(f"📄 Response: {response.text}")
         
         if response.status_code == 200:
-            print("✅ Call initiated with voice support!")
+            print("✅ Call initiated!")
             return response.json()
         else:
             print("❌ Call failed")
