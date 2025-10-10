@@ -5,26 +5,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Config - Using TeleCMI v2 API with your Answer URL
+# Config - Using TeleCMI v2 API
 APP_ID = os.getenv("APP_ID", "4222424")
 APP_SECRET = os.getenv("APP_SECRET", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
-FROM_NUMBER = os.getenv("FROM_NUMBER", "919443446575")  # Your number without +
+FROM_NUMBER = os.getenv("FROM_NUMBER", "917943446575")  # Your number without +
 TO_NUMBER = os.getenv("TO_NUMBER", "917775980069")      # Destination without +
-
-# Use the Answer URL from your Piopiy dashboard
-ANSWER_URL = "https://example.com/call"  # From your dashboard
 
 # Correct TeleCMI v2 API endpoint
 TELEcMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 
 def make_call():
-    # Payload structure with your Answer URL
+    # Payload structure WITHOUT answer_url
     payload = {
         "appid": int(APP_ID),
         "secret": APP_SECRET,
         "from": FROM_NUMBER,
         "to": TO_NUMBER,
-        "answer_url": ANSWER_URL,  # Your configured Answer URL
         "extra_params": {
             "test_id": "IVR_TEST_001"
         },
@@ -53,7 +49,6 @@ def make_call():
         print("📞 Making call with configuration:")
         print(f"From: {FROM_NUMBER}")
         print(f"To: {TO_NUMBER}")
-        print(f"Answer URL: {ANSWER_URL}")
         print(f"API URL: {TELEcMI_API_URL}")
         
         res = requests.post(TELEcMI_API_URL, json=payload, headers=headers, timeout=15)
@@ -65,7 +60,10 @@ def make_call():
         
         try:
             data = res.json()
-            print("✅ Call triggered successfully!")
+            if data.get('status') == 'error':
+                print("❌ Call failed with error!")
+            else:
+                print("✅ Call triggered successfully!")
             print("Response data:", data)
             return data
         except ValueError:
