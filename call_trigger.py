@@ -1,48 +1,47 @@
 # call_trigger.py
-import requests
+from piopiy import RestClient
 
 def make_call():
-    # Use the EXACT URL from your Piopiy dashboard
-    ANSWER_URL = "https://ivr-calling-1nyf.onrender.com/call"
-    
-    payload = {
-        "appid": "4222424",
-        "secret": "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780",
-        "from": "917943446575",
-        "to": "917775980069", 
-        "answer_url": ANSWER_URL
-    }
-    
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
     try:
-        print("🚀 Making call with Piopiy v1 API...")
-        print(f"From: 917943446575")
-        print(f"To: 917775980069")
-        print(f"Answer URL: {ANSWER_URL}")
+        print("🚀 INITIATING PIOPIY CALL...")
         
-        response = requests.post(
-            "https://piopiy.telecmi.com/v1/call/make",
-            json=payload,
-            headers=headers,
-            timeout=30
+        # Initialize Piopiy client with your credentials
+        piopiy = RestClient("4222424", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
+        
+        # Your Render app URL
+        answer_url = "https://ivr-calling-1nyf.onrender.com/call"
+        
+        print(f"📞 Calling: 917775980069")
+        print(f"🎯 From: 917943446575") 
+        print(f"🔗 Webhook: {answer_url}")
+        
+        # Make the call using Piopiy SDK
+        response = piopiy.voice.call(
+            "917775980069",    # to number
+            "917943446575",    # from number (caller ID)
+            answer_url,        # webhook URL for voice handling
+            {
+                'duration': 120,   # Max call duration
+                'timeout': 30,     # Answer timeout
+                'loop': 1          # Retry attempts
+            }
         )
         
-        print(f"📊 Status Code: {response.status_code}")
-        print(f"📄 Response: {response.text}")
+        print("✅ CALL INITIATED SUCCESSFULLY!")
+        print("📋 Response Details:")
+        print(f"   - Status: {response.get('status', 'Unknown')}")
+        print(f"   - Call ID: {response.get('uuid', 'Unknown')}")
+        print(f"   - Message: {response.get('message', 'Call ringing')}")
         
-        if response.status_code == 200:
-            print("✅ Call initiated!")
-            return response.json()
-        else:
-            print("❌ Call failed")
-            return None
-            
-    except Exception as e:
-        print(f"💥 Error: {e}")
+        return response
+        
+    except Exception as error:
+        print(f"❌ CALL FAILED: {error}")
         return None
 
 if __name__ == "__main__":
-    make_call()
+    result = make_call()
+    if result:
+        print("🎉 Phone should be ringing NOW! Check your phone.")
+    else:
+        print("😞 Call failed. Check the error above.")
