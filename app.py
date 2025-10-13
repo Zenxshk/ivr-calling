@@ -2,15 +2,15 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import json
-import os
+import re
 
 app = Flask(__name__)
 CORS(app)
 
-# 📌 YOUR GOOGLE SHEET ID - I can see it from your URL
-GOOGLE_SHEET_ID = "12oP1qNlGEgkEx7xypUojoyHO5yuIKAx6SnhKcVN3Uew"
+# 📌 YOUR GOOGLE SHEET ID
+GOOGLE_SHEET_ID = "1ZJ8k513VIRj0HFOU539VTeduQpI0uAlz"
 
-def get_sheet_data(sheet_name='demo testing'):
+def get_sheet_data(sheet_name='Course_Publishing_Template'):
     """Fetch data from YOUR Google Sheet"""
     url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet={sheet_name}"
     
@@ -33,8 +33,6 @@ def get_sheet_data(sheet_name='demo testing'):
             text = text.split('google.visualization.Query.setResponse(')[1]
             text = text.rsplit(');', 1)[0]
         
-        print(f"📝 Cleaned response (first 500 chars): {text[:500]}...")
-        
         # Parse JSON
         data = json.loads(text)
         return data
@@ -44,7 +42,7 @@ def get_sheet_data(sheet_name='demo testing'):
         raise Exception(f"Failed to fetch sheet: {str(e)}")
 
 def process_sheet_data(data):
-    """Convert your sheet data to JSON"""
+    """Convert your sheet data to JSON with proper headers"""
     print("🔄 Processing sheet data...")
     
     if not data or 'table' not in data:
@@ -57,25 +55,19 @@ def process_sheet_data(data):
     if not rows:
         return []
     
-    # Extract headers from first row
-    headers = []
-    first_row = rows[0]['c'] if rows[0] else []
+    # Define the proper column headers based on your structure
+    headers = [
+        "course_name", "description", "level", "age_group", "mode",
+        "duration_hours", "start_date", "end_date", "price_range", 
+        "teacher_name", "materials_included", "schedule_details",
+        "thumbnail_image_url", "status"
+    ]
     
-    for i, cell in enumerate(first_row):
-        if cell and 'v' in cell:
-            header_name = str(cell['v']).strip()
-        else:
-            header_name = f"column_{i+1}"
-        
-        # Clean header name for JSON
-        clean_header = header_name.replace(' ', '_').replace('-', '_').lower()
-        headers.append(clean_header)
+    print(f"🏷️ Using predefined headers: {headers}")
     
-    print(f"🏷️ Headers: {headers}")
-    
-    # Process data rows (skip header row)
+    # Process ALL rows as data (no header row to skip)
     processed_data = []
-    for row_index, row in enumerate(rows[1:], start=1):
+    for row_index, row in enumerate(rows, start=1):
         if not row or not row.get('c'):
             continue
             
@@ -84,12 +76,21 @@ def process_sheet_data(data):
         
         for i, header in enumerate(headers):
             if i < len(row_cells) and row_cells[i] and 'v' in row_cells[i]:
-                item[header] = row_cells[i]['v']
+                # Handle date formatting
+                cell_value = row_cells[i]['v']
+                if isinstance(cell_value, str) and 'Date(' in cell_value:
+                    # Convert Date(2025,10,15) to 2025-10-15
+                    date_match = re.search(r'Date\((\d+),(\d+),(\d+)\)', cell_value)
+                    if date_match:
+                        year, month, day = date_match.groups()
+                        cell_value = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+                
+                item[header] = cell_value
             else:
                 item[header] = ""  # Empty cell
         
         processed_data.append(item)
-        print(f"📄 Row {row_index}: {item}")
+        print(f"📄 Row {row_index}: Course: {item.get('course_name', 'No Name')}")
     
     print(f"✅ Processed {len(processed_data)} data rows")
     return processed_data
@@ -107,7 +108,6 @@ def home():
         }
     })
 
-# 👇 TEST YOUR SHEET CONNECTION
 @app.route('/api/test', methods=['GET'])
 def test_sheet():
     try:
@@ -128,22 +128,19 @@ def test_sheet():
             "help": "Make sure your Google Sheet is shared publicly"
         }), 500
 
-# 👇 DEBUG - SEE RAW DATA
 @app.route('/api/debug', methods=['GET'])
 def debug_sheet():
     try:
         data = get_sheet_data()
         
-        # Show simplified debug info
         debug_info = {
             "table_keys": list(data.get('table', {}).keys()) if data else [],
             "row_count": len(data.get('table', {}).get('rows', [])) if data else 0,
             "first_few_rows": []
         }
         
-        # Show first 2 rows as sample
         rows = data.get('table', {}).get('rows', [])
-        for i, row in enumerate(rows[:2]):
+        for i, row in enumerate(rows[:3]):
             if row and row.get('c'):
                 debug_info["first_few_rows"].append({
                     "row_index": i,
@@ -162,7 +159,6 @@ def debug_sheet():
             "message": str(e)
         }), 500
 
-# 👇 GET YOUR ACTUAL DATA
 @app.route('/api/data', methods=['GET'])
 def get_all_data():
     try:
