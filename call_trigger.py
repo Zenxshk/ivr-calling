@@ -12,7 +12,7 @@ SECRET = "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780"
 AUDIO_FILE = "1760350048331ElevenLabs20251009T151503AnikaSweetLivelyHindiSocialMediaVoicepvcsp99s100sb100se0bm2wav6ca049c0-a81c-11f0-9f7b-3b2ce86cca8b_piopiy.wav"
 
 # Replace with your public Render URL
-CALLBACK_URL = "https://your-app-name.onrender.com/handle_input"
+CALLBACK_URL = "https://ivr-calling-1nyf.onrender.com/handle_input"
 
 @app.route('/make_call', methods=['GET'])
 def make_call():
