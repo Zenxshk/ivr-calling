@@ -17,23 +17,20 @@ TO_NUMBER = "919518337344"
 @app.route('/make_call', methods=['POST', 'GET'])
 def make_call():
     try:
-        # Get data from request (accept both JSON and form-data)
         if request.is_json:
             data = request.get_json() or {}
         else:
             data = request.form.to_dict() or {}
 
-        # If user provides new to/from, override defaults
         from_number = data.get("from", FROM_NUMBER)
         to_number = data.get("to", TO_NUMBER)
         file_name = data.get("file_name", "music_file.wav")
 
-        # Prepare the EXACT payload that works in Postman
         payload = {
             "appid": APP_ID,
             "secret": SECRET,
-            "from": int(from_number),  # Convert to integer like your working example
-            "to": int(to_number),      # Convert to integer like your working example
+            "from": int(from_number),
+            "to": int(to_number),
             "extra_params": {"order_id": "ORD12345"},
             "pcmo": [
                 {
@@ -47,51 +44,39 @@ def make_call():
             ]
         }
 
-        # 🔹 MAKE THE ACTUAL API CALL TO TELECMI with JSON
         headers = {
-            'Content-Type': 'application/json'
+            "Accept": "application/json",
+            "Content-Type": "application/json"
         }
-        
-        print(f"📞 Sending payload to TeleCMI: {json.dumps(payload, indent=2)}")
-        
-        response = requests.post(TELECMI_API_URL, json=payload, headers=headers)
-        
-        # Return the response
-        if response.status_code == 200:
-            return jsonify({
-                "status": "success",
-                "message": "Call initiated successfully",
-                "telecmi_response": response.json(),
-                "status_code": response.status_code
-            }), 200
-        else:
-            return jsonify({
-                "status": "error",
-                "message": "Failed to initiate call",
-                "telecmi_response": response.text,
-                "status_code": response.status_code
-            }), response.status_code
+
+        print("📞 Sending Payload to TeleCMI:\n", json.dumps(payload, indent=2))
+
+        # ✅ Force send JSON body as string (not auto-encoded)
+        response = requests.post(TELECMI_API_URL, data=json.dumps(payload), headers=headers)
+
+        return jsonify({
+            "status": "success" if response.ok else "error",
+            "telecmi_status_code": response.status_code,
+            "telecmi_response": response.text
+        }), response.status_code
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-# === 2️⃣ DTMF HANDLER — When user presses keys ===
+# === 2️⃣ DTMF HANDLER ===
 @app.route('/dtmf', methods=['POST'])
 def handle_dtmf():
     try:
-        # TeleCMI might send form-data to DTMF handler
         if request.is_json:
             data = request.get_json()
         else:
             data = request.form.to_dict()
-            
-        print(f"📞 Received DTMF data: {data}")
-        
-        digit = data.get("digit", "")
-        print(f"📞 User pressed: {digit}")
 
-        # Logic for pressed key
+        print(f"📞 Received DTMF data: {data}")
+        digit = data.get("dtmf") or data.get("digit", "")
+
+        # logic for pressed key
         if digit == "1":
             next_action = {
                 "action": "play",
@@ -114,19 +99,7 @@ def handle_dtmf():
         return jsonify({"error": str(e)}), 500
 
 
-# === 3️⃣ HOME ROUTE ===
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({
-        "message": "✅ IVR Calling API is WORKING!",
-        "endpoints": {
-            "make_call": "POST /make_call",
-            "dtmf_handler": "POST /dtmf"
-        }
-    })
-
-
-# === 4️⃣ HEALTH CHECK ===
+# === HEALTH CHECK ===
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({"status": "healthy", "message": "Server is running!"})
