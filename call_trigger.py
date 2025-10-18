@@ -35,7 +35,7 @@ def make_call():
                     "max_digit": 4,
                     "max_retry": 2,
                     "timeout": 10,
-                    "action_url": "https://test.com/dtmf"  # Replace with your DTMF handling API
+                    "action_url": " https://ivr-calling-1nyf.onrender.com/dtmf"  # Replace with your DTMF handling API
                 }
             ]
         }
@@ -44,7 +44,6 @@ def make_call():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # === 2️⃣ DTMF HANDLER — When user presses keys ===
 @app.route('/dtmf', methods=['POST'])
