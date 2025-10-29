@@ -1,10 +1,10 @@
 import React from 'react';
-import CoursesPage from './CoursesPage';
+import HRcall from './HRcall';
 
 function App() {
   return (
-    <div className="App">
-      <CoursesPage />
+    <div>
+      <HRcall />
     </div>
   );
 }

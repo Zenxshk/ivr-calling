@@ -5,6 +5,10 @@ import logging
 
 app = Flask(__name__)
 
+from flask_cors import CORS
+
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 # Configure logging to flow into Gunicorn/Render logs
 _gunicorn_logger = logging.getLogger('gunicorn.error')
 if _gunicorn_logger.handlers:
@@ -15,7 +19,7 @@ app.logger.propagate = False
 # 🔹 Config (prefer environment variables on Render)
 APP_ID = int(os.environ.get("APP_ID", "4222424"))
 SECRET = os.environ.get("SECRET", "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780")
-FROM_NUMBER = os.environ.get("FROM_NUMBER", "917943446575")
+FROM_NUMBER = os.environ.get("FROM_NUMBER", "917943446565")
 TO_NUMBER = os.environ.get("TO_NUMBER", "919518337344")
 
 # CDN file keys from your TeleCMI portal (2.png -> key Name column)
