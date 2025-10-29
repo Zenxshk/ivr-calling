@@ -12,8 +12,7 @@ TELECMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 APP_ID = 4222424
 SECRET = "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780"
 FROM_NUMBER = 917943446565
-# Remove TO_NUMBER default — let frontend send it
-# TO_NUMBER = 917756043094
+
 
 # === ROUTE ===
 @app.route('/make_call', methods=['POST', 'GET'])
