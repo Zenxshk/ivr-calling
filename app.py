@@ -12,53 +12,52 @@ TELECMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 # 🔹 Your TeleCMI credentials
 APP_ID = 4222424
 SECRET = "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780"
-FROM_NUMBER = "917943446565"
-TO_NUMBER = "917775980069"
+FROM_NUMBER = 917943446565   # ← no quotes → integer
+TO_NUMBER = 917756043094     # ← no quotes → integer
 
 # === 1️⃣ MAIN API — Make Actual Call to TeleCMI ===
-@app.route('/make_call', methods=['POST', 'GET'])  # Added GET for testing
+@app.route('/make_call', methods=['POST', 'GET'])
 def make_call():
     try:
-        # Optionally take input from frontend
         data = request.get_json() or {}
         
-        # If user provides new to/from, override defaults
-        from_number = data.get("from", FROM_NUMBER)
-        to_number = data.get("to", TO_NUMBER)
+        # CONVERT TO INTEGERS (TeleCMI requires numbers)
+        from_number = int(data.get("from", FROM_NUMBER))   # ← int()
+        to_number = int(data.get("to", TO_NUMBER))         # ← int()
+
         file_name = data.get("file_name", "1760350048331ElevenLabs20251009T151503AnikaSweetLivelyHindiSocialMediaVoicepvcsp99s100sb100se0bm2wav6ca049c0-a81c-11f0-9f7b-3b2ce86cca8b_piopiy.wav")
 
-        # TeleCMI expects form-data, not JSON
         payload = {
             "appid": APP_ID,
             "secret": SECRET,
-            "from": from_number,
-            "to": to_number,
-            "extra_params": json.dumps({"order_id": "ORD12345"}),  # Note: stringified JSON
-            "pcmo": json.dumps([  # Note: stringified JSON array
+            "from": from_number,        # ← now a number
+            "to": to_number,            # ← now a number
+            "extra_params": json.dumps({"order_id": "ORD12345"}),
+            "pcmo": json.dumps([
                 {
                     "action": "play_get_input",
                     "file_name": file_name,
                     "max_digit": 4,
                     "max_retry": 2,
                     "timeout": 10,
-                    "action_url": "https://ivr-calling-1nyf.onrender.com/dtmf"  # Fixed space
+                    "action_url": "https://ivr-calling-1nyf.onrender.com/dtmf"
                 }
             ])
         }
 
-        # 🔹 MAKE THE ACTUAL API CALL TO TELECMI
         response = requests.post(TELECMI_API_URL, data=payload)
-        
-        # Return TeleCMI's response
+        response.raise_for_status()
+
         return jsonify({
             "status": "success",
             "telecmi_response": response.json(),
             "status_code": response.status_code
         }), 200
 
+    except ValueError as e:
+        return jsonify({"error": "Invalid phone number format. Must be digits only."}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # === 2️⃣ DTMF HANDLER — When user presses keys ===
 @app.route('/dtmf', methods=['POST'])
