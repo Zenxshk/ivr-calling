@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import requests
 import json
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})   # CORS ENABLED
 
 # 🔹 TeleCMI API Endpoint
 TELECMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
@@ -10,7 +12,7 @@ TELECMI_API_URL = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
 # 🔹 Your TeleCMI credentials
 APP_ID = 4222424
 SECRET = "ccf0a102-ea6a-4f26-8d1c-7a1732eb0780"
-FROM_NUMBER = "917943446575"
+FROM_NUMBER = "917943446565"
 TO_NUMBER = "917775980069"
 
 # === 1️⃣ MAIN API — Make Actual Call to TeleCMI ===
@@ -63,34 +65,24 @@ def make_call():
 def handle_dtmf():
     try:
         data = request.get_json()
-        print(f"📞 Received DTMF data: {data}")
+        print(f"Received DTMF data: {data}")
         
         digit = data.get("digit", "")
-        print(f"📞 User pressed: {digit}")
+        print(f"User pressed: {digit}")
 
-        # Logic for pressed key
+        # Return as ARRAY to match TeleCMI spec
         if digit == "1":
-            next_action = {
-                "action": "play",
-                "file_name": "thank_you_1.wav"
-            }
+            actions = [{"action": "play", "file_name": "thank_you_1.wav"}]
         elif digit == "2":
-            next_action = {
-                "action": "play",
-                "file_name": "thank_you_2.wav"
-            }
+            actions = [{"action": "play", "file_name": "thank_you_2.wav"}]
         else:
-            next_action = {
-                "action": "play",
-                "file_name": "invalid_option.wav"
-            }
+            actions = [{"action": "play", "file_name": "invalid_option.wav"}]
 
-        return jsonify(next_action), 200
+        return jsonify(actions), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
+    
 # === 3️⃣ HOME ROUTE FOR TESTING ===
 @app.route('/', methods=['GET'])
 def home():
