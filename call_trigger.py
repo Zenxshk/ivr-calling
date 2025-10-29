@@ -94,71 +94,41 @@ def answer_call():
 @app.route('/dtmf', methods=['POST'])
 def handle_dtmf():
     try:
-        # Be tolerant to different clients (JSON, form-encoded, or raw)
-        data = request.get_json(silent=True) or {}
-        if not data and request.form:
-            data = request.form.to_dict()
-        if not data and request.data:
-            try:
-                data = json.loads(request.data.decode('utf-8'))
-            except Exception:
-                data = {}
+        data = request.get_json() or {}
+        digit = str(data.get("digit", "")).strip()
 
-        # TeleCMI/clients may send 'dtmf', 'digit', or 'digits'
-        digit = str((data.get("dtmf") or data.get("digit") or data.get("digits") or "")).strip()
+        # Replace with your actual uploaded file keys from TeleCMI dashboard
+        FILE_KEY_1 = "1760350048331ElevenLabs20251009T151503AnikaSweetLivelyHindiSocialMediaVoicepvcsp99s100sb100se0bm2wav6ca049c0-a81c-11f0-9f7b-3b2ce86cca8b_piopiy.wav"
+        FILE_KEY_2 = "1760362929284ElevenLabs20251009T151214AnikaSweetLivelyHindiSocialMediaVoicepvcsp99s100sb100se0bm2wav6a456e30-a83a-11f0-9f7b-3b2ce86cca8b_piopiy.wav"
+        FILE_KEY_INVALID = FILE_KEY_1  # repeat the main prompt if input invalid
 
-        # Debug: log headers and payload
-        try:
-            app.logger.info("[dtmf] headers=%s", dict(request.headers))
-            app.logger.info("[dtmf] raw=%s", request.data.decode('utf-8', errors='ignore'))
-            app.logger.info("[dtmf] parsed=%s", data)
-        except Exception:
-            pass
-
-        if not digit:
-            # Bad/missing input — ask again instead of 500
-            action_url = request.url_root.rstrip("/") + "/dtmf"
-            resp = [{
-                "action": "play_get_input",
-                "file_name": FILE_KEY_1,
-                "max_digit": 1,
-                "max_retry": 1,
-                "timeout": 10,
-                "action_url": action_url
-            }]
-            app.logger.info("[dtmf] response=%s", json.dumps(resp))
-            return jsonify(resp), 200
-
-        app.logger.info("📞 User pressed: %s", digit)
-
-        # Logic for pressed key
-        # For any valid input, play your second audio from CDN and keep the call alive
-        if digit in {"1", "2"}:
-            # Minimal test: clear and play only FILE_KEY_2
+        if digit == "1":
             actions = [
                 {"action": "clear"},
                 {"action": "play", "file_name": FILE_KEY_2}
             ]
+        elif digit == "2":
+            actions = [
+                {"action": "clear"},
+                {"action": "play", "file_name": FILE_KEY_1}
+            ]
         else:
-            # Repeat the first prompt on invalid input
-            action_url = request.url_root.rstrip("/") + "/dtmf"
-            actions = [{
-                "action": "play_get_input",
-                "file_name": FILE_KEY_1,
-                "max_digit": 1,
-                "max_retry": 0,
-                "timeout": 10,
-                "action_url": action_url
-            }]
+            # Invalid or empty input: replay prompt
+            actions = [
+                {
+                    "action": "play_get_input",
+                    "file_name": FILE_KEY_INVALID,
+                    "max_digit": 1,
+                    "max_retry": 1,
+                    "timeout": 10,
+                    "action_url": "https://ivr-calling-1nyf.onrender.com/dtmf"
+                }
+            ]
 
-        # IMPORTANT: TeleCMI expects PCMO wrapper in the webhook response
-        resp = actions
-        app.logger.info("[dtmf] response=%s", json.dumps(resp))
-        return jsonify(resp), 200
+        return jsonify(actions), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # === Health and index ===
 @app.route('/', methods=['GET'])
