@@ -30,15 +30,16 @@ FILE_KEY_2 = os.environ.get("FILE_KEY_2", "1760362929284ElevenLabs20251009T15121
 @app.route('/make_call', methods=['POST'])
 def make_call():
     try:
-        # Optionally take input from frontend
         data = request.get_json() or {}
 
-        # If user provides new to/from, override defaults
         from_number = data.get("from", FROM_NUMBER)
         to_number = data.get("to", TO_NUMBER)
         file_name = data.get("file_name", FILE_KEY_1)
 
-        # This will be your logic that Piopiy/GIMA expects
+        # ✅ Ensure numeric
+        from_number = int(from_number)
+        to_number = int(to_number)
+
         action_url = request.url_root.rstrip("/") + "/dtmf"
         payload = {
             "appid": APP_ID,
@@ -50,19 +51,26 @@ def make_call():
                 {
                     "action": "play_get_input",
                     "file_name": file_name,
-                    "max_digit": 1,  # collect only 1 digit and proceed immediately
+                    "max_digit": 1,
                     "max_retry": 2,
                     "timeout": 10,
-                    "action_url": action_url  # Your DTMF handling API
+                    "action_url": action_url
                 }
             ]
         }
 
-        return jsonify(payload), 200
+        # ✅ Send to TeleCMI directly here:
+        telecmi_url = "https://rest.telecmi.com/v2/ind_pcmo_make_call"
+        import requests
+        res = requests.post(telecmi_url, json=payload, timeout=10)
+        return jsonify({
+            "status": "success",
+            "telecmi_response": res.json(),
+            "status_code": res.status_code
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # === 2️⃣ Inbound Answer URL — Return initial PCMO (screenshot 1 shows /call)
 @app.route('/call', methods=['POST'])
